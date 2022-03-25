@@ -81,6 +81,7 @@ namespace ElevenNote.Services.Token
     {
         var fullName = $"{user.FirstName} {user.LastName}";
         var name = !string.IsNullOrWhiteSpace(fullName) ? fullName : user.Username;
+
         var claims = new Claim[]
         {
             new Claim("Id", user.Id.ToString()),
@@ -88,5 +89,7 @@ namespace ElevenNote.Services.Token
             new Claim("Email", user.Email),
             new Claim("Name", name)
         };
+
+        return claims;
     }
 }
