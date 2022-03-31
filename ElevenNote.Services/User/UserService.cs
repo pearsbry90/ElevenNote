@@ -13,14 +13,17 @@ namespace ElevenNote.Services.User
     public class UserService : IUserService
     {
     private readonly ApplicationDbContext _context;
-    public UserService(ApplicationDbContext context){
+    public UserService(ApplicationDbContext context)
+    {
         _context = context;
     }
-    public async Task<bool> RegisterUserAsync(UserRegister model){ 
+    public async Task<bool> RegisterUserAsync(UserRegister model)
+    { 
         if(await GetUserByEmailAsync(model.Email) != null || await GetUserByUsernameAsync(model.Username) != null)
             return false;
             
-        var entity = new UserEntity{
+        var entity = new UserEntity
+        {
             Email = model.Email,
             Username = model.Username,
             DateCreated = DateTime.Now
@@ -35,7 +38,8 @@ namespace ElevenNote.Services.User
         return numberOfChanges == 1;
     }
 
-    public async Task<UserDetail> GetUserByIdAsync(int userId){
+    public async Task<UserDetail> GetUserByIdAsync(int userId)
+    {
         var entity = await _context.User.FindAsync(userId);
         if (entity is null)
             return null;
@@ -52,13 +56,14 @@ namespace ElevenNote.Services.User
         return userDetail;
     }
 
-    private async Task<UserEntity> GetUserByEmailAsync(string email){
+    private async Task<UserEntity> GetUserByEmailAsync(string email)
+    {
         return await _context.User.FirstOrDefaultAsync(user => user.Email.ToLower() == email.ToLower());
     }
 
-    private async Task<UserEntity> GetUserByUsernameAsync(string username){
-        return await _context.User.FirstOrDefaultAsync(user => user.Username.ToLower() == username.ToLower());
+    private async Task<UserEntity> GetUserByUsernameAsync(string username)
+        {
+            return await _context.User.FirstOrDefaultAsync(user => user.Username.ToLower() == username.ToLower());
         }
     }
 }
-

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using ElevenNote.Data;
 using Microsoft.AspNetCore.Identity;
@@ -11,29 +12,32 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace ElevenNote.Services.Token
 {
     public class TokenService : ITokenService
-    {
-        private readonly ApplicationDbContext _context;
-        private readonly IConfiguration _configuration;
-        public TokenService(ApplicationDbContext context, IConfiguration configuration)
         {
-            _context = context;
-            _configuration = configuration;
-        }
-        public async Task<TokenResponse> GetTokenAsync(TokenResponse model)
-        {
-            var userEntity = await GetValidUserAsync(model);
-            if (userEntity is null)
-                return null;
+            private readonly ApplicationDbContext _context;
+            private readonly IConfiguration _configuration;
+            public TokenService(ApplicationDbContext context, IConfiguration configuration)
+            {
+                _context = context;
+                _configuration = configuration;
+            }
 
-            return GenerateToken(userEntity);
-        }
+            public async Task<TokenResponse> GetTokenAsync(TokenResponse model)
+            {
+                // NOT ABLE TO MIGRATE (14.02) BC OF THIS STUPID ERROR
+                // dotnet ef migration add AddNoteEntity -p ElevenNote.Data -s ElevenNote.WebAPI
+                // Update: dotnet ef database update -p ....Data -s ... WebAPI
+                var userEntity = await GetValidUserAsync(model);
+                if (userEntity is null)
+                    return null;
 
-        private async Task<UserEntity> GetValidUserAsync(TokenRequest model)
+                return GenerateToken(userEntity);
+            }
+
+        public async Task<UserEntity> GetValidUserAsync(TokenRequest model)
         {
             var userEntity = await _context.User.FirstOrDefaultAsync(user => user.Username.ToLower() == model.Username.ToLower());
                 if (userEntity is null)
@@ -47,11 +51,29 @@ namespace ElevenNote.Services.Token
 
             return userEntity;
         }
-        private TokenResponse GenerateToken(UserEntity entity)
+    private Claim[] GetClaims(UserEntity user)
+        {
+            var fullName = $"{user.FirstName} {user.LastName}";
+            var name = !string.IsNullOrWhiteSpace(fullName) ? fullName : user.Username;
+
+            var claims = new Claim[]
+            {
+                new Claim("Id", user.Id.ToString()),
+                new Claim("Username", user.Username),
+                new Claim("Email", user.Email),
+                new Claim("Name", name)
+            };
+
+            return claims;
+        }
+
+    private TokenResponse GenerateToken(UserEntity entity)
         {
             var claims = GetClaims(entity);
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -75,21 +97,11 @@ namespace ElevenNote.Services.Token
 
             return tokenResponse;
         }
-    }
 
-    private Claim[] GetClaims(UserEntity user)
-    {
-        var fullName = $"{user.FirstName} {user.LastName}";
-        var name = !string.IsNullOrWhiteSpace(fullName) ? fullName : user.Username;
-
-        var claims = new Claim[]
+        public Task<TokenResponse> GetTokenAsync(TokenRequest model)
         {
-            new Claim("Id", user.Id.ToString()),
-            new Claim("Username", user.Username),
-            new Claim("Email", user.Email),
-            new Claim("Name", name)
-        };
-
-        return claims;
+            throw new NotImplementedException();
+        }
     }
+
 }
