@@ -25,7 +25,7 @@ namespace ElevenNote.Services.Token
                 _configuration = configuration;
             }
 
-            public async Task<TokenResponse> GetTokenAsync(TokenResponse model)
+            public async Task<TokenResponse> GetTokenAsync(TokenRequest model)
             {
                 // NOT ABLE TO MIGRATE (14.02) BC OF THIS STUPID ERROR
                 // dotnet ef migration add AddNoteEntity -p ElevenNote.Data -s ElevenNote.WebAPI
@@ -98,10 +98,6 @@ namespace ElevenNote.Services.Token
             return tokenResponse;
         }
 
-        public Task<TokenResponse> GetTokenAsync(TokenRequest model)
-        {
-            throw new NotImplementedException();
-        }
     }
 
 }
